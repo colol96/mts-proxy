@@ -1,6 +1,6 @@
 const TEACHABLE_ORIGIN = 'https://master-the-score.teachable.com';
-const TOKEN = process.env.50000c1b5f0ed810c790cec1c6c4487f93dcb98ecd01ddd2253bad509f071a5e;
-const COLLECTION_ID = process.env.65c375ede1d584c57eab1c18;
+const TOKEN = process.env.WEBFLOW_TOKEN;
+const COLLECTION_ID = process.env.COLLECTION_ID;
 // /api/courses.js — Webflow API v2 → returns ready-to-inject HTML
 
 // Map your collection item to the fields you need

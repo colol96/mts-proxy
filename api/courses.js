@@ -6,7 +6,7 @@ const WEBFLOW_TOKEN = process.env.52faf5b60be0a68021a1c38932ddf23289a4cc4bc8bc64
 const COLLECTION_ID = process.env.65c375ede1d584c57eab1c18;
 
 // Toggle to inspect fields first:
-const DEBUG_RAW_JSON = false; // set true temporarily to inspect fields
+const DEBUG_RAW_JSON = true; // set true temporarily to inspect fields
 
 module.exports = async (req, res) => {
     if (!WEBFLOW_TOKEN || !COLLECTION_ID) {

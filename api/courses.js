@@ -1,14 +1,20 @@
-// /api/courses.js — Webflow v2, with multi-ref teacher resolution
+// /api/courses.js — Webflow v2 → HTML for Teachable
+// Env required: WEBFLOW_TOKEN, COLLECTION_ID, TEACHERS_COLLECTION_ID
+// Optional: change TEACHABLE_ORIGIN if your school domain differs.
+
 const TEACHABLE_ORIGIN = 'https://master-the-score.teachable.com';
 const TOKEN = process.env.WEBFLOW_TOKEN;
 const COURSES_COLLECTION_ID = process.env.COLLECTION_ID;
-const TEACHERS_FIELD_KEY = 'teachers';     // multi-reference field
-const IMAGE_FIELD_KEY = 'teaser-hero';     // image field to display
+const TEACHERS_COLLECTION_ID = process.env.TEACHERS_COLLECTION_ID;
 
-// Helper: fetch with Webflow v2 auth
+// Webflow field keys we use
+const IMAGE_FIELD_KEY = 'teaser-hero';  // <Image> field holding the thumbnail
+const TEACHERS_FIELD_KEY = 'teachers';  // <Multi-reference> field (IDs of teachers)
+
+// Fetch helper with v2 auth
 const wfFetch = (url) => fetch(url, { headers: { Authorization: `Bearer ${TOKEN}` } });
 
-// Build HTML for one course card
+// ---------- Helpers ----------
 function courseHTML(c) {
     const teacherNames = c.teachers?.map(t => t.name).join(', ') || '';
     return `
@@ -26,11 +32,11 @@ function renderHTML(items) {
     return `<section id="all-courses-content"><div class="mts-grid">${items.map(courseHTML).join('')}</div></section>`;
 }
 
-// Convert raw item → base course object
-function toCourseBase(it) {
-    const fd = it.fieldData || it;
+function toCourseBase(item) {
+    // v2 returns custom fields under item.fieldData
+    const fd = item.fieldData || item;
     return {
-        id: it.id,
+        id: item.id,
         name: fd.name || '',
         slug: fd.slug || '',
         image: fd[IMAGE_FIELD_KEY]?.url || null,
@@ -41,27 +47,41 @@ function toCourseBase(it) {
 async function listItems(collectionId, limit = 100, offset = 0) {
     const r = await wfFetch(`https://api.webflow.com/v2/collections/${collectionId}/items?limit=${limit}&offset=${offset}`);
     const text = await r.text();
-    if (!r.ok) throw new Error(`Items ${collectionId} ${r.status}: ${text.slice(0,200)}`);
-    return JSON.parse(text);
-}
-
-async function getCollectionSchema(collectionId) {
-    const r = await wfFetch(`https://api.webflow.com/v2/collections/${collectionId}`);
-    if (!r.ok) throw new Error(`Schema ${collectionId} ${r.status}`);
-    return r.json();
+    if (!r.ok) throw new Error(`List ${collectionId} ${r.status}: ${text.slice(0, 300)}`);
+    return JSON.parse(text); // { items: [...], pagination: {...} }
 }
 
 async function getItem(collectionId, itemId) {
     const r = await wfFetch(`https://api.webflow.com/v2/collections/${collectionId}/items/${itemId}`);
     const text = await r.text();
-    if (!r.ok) throw new Error(`Item ${itemId} ${r.status}: ${text.slice(0,200)}`);
+    if (!r.ok) throw new Error(`Get ${collectionId}/${itemId} ${r.status}: ${text.slice(0, 300)}`);
     return JSON.parse(text);
 }
 
+// Simple bounded concurrency for fetching teachers
+async function fetchMany(ids, fn, concurrency = 8) {
+    const results = {};
+    let i = 0;
+    async function worker() {
+        while (i < ids.length) {
+            const id = ids[i++];
+            try {
+                const x = await fn(id);
+                results[id] = x;
+            } catch (_) {
+                // ignore missing/archived
+            }
+        }
+    }
+    await Promise.all(new Array(Math.min(concurrency, ids.length)).fill(0).map(worker));
+    return results;
+}
+
+// ---------- Handler ----------
 module.exports = async (req, res) => {
     const debug = 'debug' in (req.query || {});
 
-    // Handle CORS preflight
+    // CORS preflight
     if (req.method === 'OPTIONS') {
         res.setHeader('Access-Control-Allow-Origin', TEACHABLE_ORIGIN);
         res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -70,48 +90,40 @@ module.exports = async (req, res) => {
     }
 
     try {
-        if (!TOKEN || !COURSES_COLLECTION_ID) throw new Error('Missing WEBFLOW_TOKEN or COLLECTION_ID');
-
-        // 1. Get schema of Courses collection → find Teachers field target collection
-        const schema = await getCollectionSchema(COURSES_COLLECTION_ID);
-        const teacherField = (schema.fields || []).find(f => f.key === TEACHERS_FIELD_KEY);
-        const teachersCollectionId = teacherField?.metadata?.collectionId;
-        if (!teachersCollectionId) throw new Error('Could not resolve teachers collection ID');
-
-        // 2. Get Courses
-        const data = await listItems(COURSES_COLLECTION_ID, 100, 0);
-        const courses = (data.items || []).map(toCourseBase);
-
-        // 3. Collect all teacher IDs
-        const allTeacherIds = new Set();
-        courses.forEach(c => c.teacherIds.forEach(id => allTeacherIds.add(id)));
-
-        // 4. Fetch teachers by ID
-        const teacherMap = {};
-        const ids = Array.from(allTeacherIds);
-        for (const id of ids) {
-            try {
-                const t = await getItem(teachersCollectionId, id);
-                const fd = t.fieldData || t;
-                teacherMap[id] = { id, name: fd.name || '' };
-            } catch (e) {
-                if (debug) console.warn('Teacher fetch failed for', id, e.message);
-            }
+        if (!TOKEN || !COURSES_COLLECTION_ID) {
+            throw new Error('Missing WEBFLOW_TOKEN or COLLECTION_ID');
         }
 
-        // 5. Attach teacher names
-        const coursesWithTeachers = courses.map(c => ({
-            ...c,
-            teachers: c.teacherIds.map(id => teacherMap[id]).filter(Boolean)
+        // 1) Load courses
+        const data = await listItems(COURSES_COLLECTION_ID, 100, 0);
+        const baseCourses = (data.items || []).map(toCourseBase);
+
+        // 2) Resolve teacher names (if TEACHERS_COLLECTION_ID is provided)
+        let teacherMap = {};
+        if (TEACHERS_COLLECTION_ID) {
+            const allTeacherIds = Array.from(new Set(baseCourses.flatMap(c => c.teacherIds)));
+            teacherMap = await fetchMany(allTeacherIds, async (id) => {
+                const t = await getItem(TEACHERS_COLLECTION_ID, id);
+                const fd = t.fieldData || t;
+                return { id, name: fd.name || '' };
+            });
+        }
+
+        // 3) Attach teachers and render
+        const courses = baseCourses.map(c => ({
+            name: c.name,
+            slug: c.slug,
+            image: c.image,
+            teachers: (c.teacherIds || []).map(id => teacherMap[id]).filter(Boolean)
         }));
 
-        // 6. Render HTML
-        const html = renderHTML(coursesWithTeachers);
+        const html = renderHTML(courses);
 
         res.setHeader('Access-Control-Allow-Origin', TEACHABLE_ORIGIN);
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
         res.setHeader('Cache-Control', 'public, max-age=300');
-        res.status(200).send(html);
+        return res.status(200).send(html);
+
     } catch (e) {
         if (debug) {
             res.setHeader('Access-Control-Allow-Origin', TEACHABLE_ORIGIN);
@@ -120,6 +132,6 @@ module.exports = async (req, res) => {
         }
         console.error('[COURSES ERROR]', e);
         res.setHeader('Access-Control-Allow-Origin', TEACHABLE_ORIGIN);
-        res.status(502).send('');
+        return res.status(502).send('');
     }
 };

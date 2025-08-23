@@ -1,5 +1,5 @@
 const TEACHABLE_ORIGIN = 'https://master-the-score.teachable.com';
-const TOKEN = process.env.52faf5b60be0a68021a1c38932ddf23289a4cc4bc8bc641a883b88d0324a120b;
+const TOKEN = process.env.50000c1b5f0ed810c790cec1c6c4487f93dcb98ecd01ddd2253bad509f071a5e;
 const COLLECTION_ID = process.env.65c375ede1d584c57eab1c18;
 // /api/courses.js — Webflow API v2 → returns ready-to-inject HTML
 

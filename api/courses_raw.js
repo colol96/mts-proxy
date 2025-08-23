@@ -1,8 +1,8 @@
 // /api/courses_raw.js — dumps Webflow response so we can see the real error/status.
 module.exports = async (req, res) => {
     try {
-        const token = process.env.WEBFLOW_TOKEN;
-        const cid = process.env.COLLECTION_ID;
+        const token = process.env.50000c1b5f0ed810c790cec1c6c4487f93dcb98ecd01ddd2253bad509f071a5e;
+        const cid = process.env.65c375ede1d584c57eab1c18;
         if (!token || !cid) {
             return res.status(500).json({ error: 'Missing WEBFLOW_TOKEN or COLLECTION_ID' });
         }

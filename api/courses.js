@@ -49,8 +49,6 @@ module.exports = async (req, res) => {
             id: it._id,
             name: it.name,                     // string
             slug: it.slug,                     // string
-            image: it.mainImage?.url || it.thumbnail?.url || null, // adjust
-            price: it.price ?? null            // adjust (string/number)
         }));
 
         // ---- Render HTML (cards) ----

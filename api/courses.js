@@ -25,7 +25,7 @@ module.exports = async (req, res) => {
 
     try {
         // Webflow API: v1 style endpoint (commonly used)
-        const url = `https://api.webflow.com/v2/collections/${COLLECTION_ID}/items?limit=100`;
+        const url = `https://api.webflow.com/v2/collections/${COLLECTION_ID}/items?live=true&limit=100`;
         const r = await fetch(url, {
             headers: {
                 Authorization: `Bearer ${WEBFLOW_TOKEN}`,

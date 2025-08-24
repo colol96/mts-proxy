@@ -3,7 +3,7 @@ module.exports = async (req, res) => {
     try {
         const token = process.env.WEBFLOW_TOKEN;
         const cid = process.env.COLLECTION_ID;
-        const teacherId = process.env.COLLECTION_ID;
+        const teacherId = process.env.TEACHERS_COLLECTION_ID;
         if (!token || !cid || !teacherId ) {
             return res.status(500).json({ error: 'Missing WEBFLOW_TOKEN or COLLECTION_ID or TEACHER_ID' });
         }

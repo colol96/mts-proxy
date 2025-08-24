@@ -35,7 +35,7 @@ function teacherSpan(t) {
 function courseCardHTML(c) {
     const teachersHTML = (c.teachers || []).map(teacherSpan).join('');
     return `
-    <a class="mts-card" href="https://www.masterthescore.com/courses/${c.slug}">
+    <a class="mts-card" href="https://www.masterthescore.com/course/${c.slug}">
       ${c.image ? `<img src="${c.image}" alt="">` : ''}
       <div class="meta">
         <div class="title">${c.name}</div>

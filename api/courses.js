@@ -79,7 +79,7 @@ function renderHTML(items) {
 */
 
 // Instead of just returning <section>...</section>
-function renderHTML(items) {
+function renderFullPage(items) {
     const cards = items.map(courseHTML).join('');
     return `<!DOCTYPE html>
 <html lang="en">

@@ -1,17 +1,16 @@
-// /api/courses.js — Webflow v2 → HTML for Teachable
-// Env required: WEBFLOW_TOKEN, COLLECTION_ID, TEACHERS_COLLECTION_ID
-// Optional: change TEACHABLE_ORIGIN if your school domain differs.
+// /api/courses.js — Webflow v2 → grouped HTML sections for Teachable
+// Env: WEBFLOW_TOKEN, COLLECTION_ID (courses), TEACHERS_COLLECTION_ID (teachers)
 
 const TEACHABLE_ORIGIN = 'https://master-the-score.teachable.com';
 const TOKEN = process.env.WEBFLOW_TOKEN;
 const COURSES_COLLECTION_ID = process.env.COLLECTION_ID;
 const TEACHERS_COLLECTION_ID = process.env.TEACHERS_COLLECTION_ID;
 
-// Webflow field keys we use
+// Field keys in your Webflow collections
 const PUBLISH_FIELD_KEY = 'publish';
-const IMAGE_FIELD_KEY = 'teaser-hero';  // <Image> field holding the thumbnail
-const TEACHERS_FIELD_KEY = 'teachers';  // <Multi-reference> field (IDs of teachers)
-const TEACHERS_PORTRAIT_KEY = 'teaser-profile';  // <Multi-reference> field (IDs of teachers)
+const IMAGE_FIELD_KEY   = 'teaser-hero';      // course thumbnail
+const TEACHERS_FIELD_KEY = 'teachers';        // multi-ref (IDs) to Teachers
+const TEACHER_PORTRAIT_KEY = 'teaser-profile';// teacher portrait image
 
 // Category sections (boolean fields on Course items)
 const SECTIONS = [
@@ -29,7 +28,6 @@ const SECTIONS = [
     },
 ];
 
-// Fetch helper with v2 auth
 const wfFetch = (url) => fetch(url, { headers: { Authorization: `Bearer ${TOKEN}` } });
 
 // ---------- Render helpers ----------
@@ -44,7 +42,7 @@ function teacherSpan(t) {
 }
 
 function courseCardHTML(c) {
-    const teachersHTML = (c.teachers || []).map(teacherSpan);
+    const teachersHTML = (c.teachers || []).map(teacherSpan).join(', ');
     return `
     <a class="mts-card" href="https://www.masterthescore.com/courses/${c.slug}">
       ${c.image ? `<img src="${c.image}" alt="">` : ''}

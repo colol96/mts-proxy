@@ -67,7 +67,13 @@ function sectionHTML(title, items) {
 }
 
 function renderSectionsHTML(grouped) {
-    return grouped.map(g => sectionHTML(g.title, g.items)).join('');
+    const sections = grouped.map(g => sectionHTML(g.title, g.items)).join('');
+    return `
+    <div class="mts-wrapper">
+      <h2 class="mts-main-title">More courses to explore</h2>
+      ${sections}
+    </div>
+  `;
 }
 
 // Full-page preview (when ?preview=1)

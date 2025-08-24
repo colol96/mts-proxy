@@ -14,18 +14,9 @@ const TEACHER_PORTRAIT_KEY = 'teaser-profile';// teacher portrait image
 
 // Category sections (boolean fields on Course items)
 const SECTIONS = [
-    {
-        title: 'Music Composition & Orchestration Courses',
-        key: 'courses-composition-music',
-    },
-    {
-        title: 'Music Production Courses',
-        key: 'courses-music-production',
-    },
-    {
-        title: 'Trailer Music Courses',
-        key: 'courses-trailer-music',
-    },
+    { title: 'Music Composition & Orchestration Courses', key: 'courses-composition-music' },
+    { title: 'Music Production Courses', key: 'courses-music-production' },
+    { title: 'Trailer Music Courses', key: 'courses-trailer-music' },
 ];
 
 const wfFetch = (url) => fetch(url, { headers: { Authorization: `Bearer ${TOKEN}` } });
@@ -70,56 +61,19 @@ function renderSectionsHTML(grouped) {
     const sections = grouped.map(g => sectionHTML(g.title, g.items)).join('');
     return `
     <div class="mts-wrapper">
-      <section class="mts-section"><h2 class="mts-main-title">More courses to explore</h2></section>
+      <h2 class="mts-main-title">More courses to explore</h2>
       ${sections}
     </div>
   `;
 }
 
-// Full-page preview (when ?preview=1)
+// Optional: wrap as standalone HTML page (for preview only)
 function renderFullPage(html) {
     return `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <title>Courses Preview</title>
-<style>
-  body { font-family: system-ui, sans-serif; background: transparent; padding:2rem; }
-  .mts-section { max-width:944px; margin:0 auto 2.5rem; }
-  .mts-section-title { font-size:1.25rem; font-weight:700; margin:0 0 0.75rem; }
-  .mts-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(284px, 1fr)); gap:1.5rem; }
-    .mts-card {
-      display: flex;
-      background: transparent;
-      border: 1px solid #b69a5d;
-      border-radius: 8px;
-      overflow: hidden;
-      text-decoration: none;
-      color: inherit;
-      /*box-shadow: 0 2px 6px rgba(0,0,0,0.05);*/
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
-      flex-direction: column;
-      align-items: stretch;
-    }
-  .mts-card:hover { transform:translateY(-4px); box-shadow:0 6px 12px rgba(0,0,0,0.1); }
-  .mts-card img {
-      display: block;
-      width: 100%;
-      aspect-ratio: 7/5;
-      object-fit: cover;
-    }
-    .mts-card .meta {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      height: 100%;
-      padding: 0.75rem 1rem;
-    }
-  .mts-card .title { font-weight:600; font-size:1rem; margin-bottom:1rem; line-height:1.3; }
-  .mts-card .teachers { display:flex; flex-wrap:wrap; gap:.5rem 1rem; font-size:.85rem; color:#6b7280; }
-  .mts-card .teacher { display:flex; align-items:center; gap:.35rem; }
-  .mts-card .teacher-portrait { width:20px; height:20px; border-radius:50%; object-fit:cover; }
-</style>
 </head>
 <body>
 ${html}
@@ -136,7 +90,6 @@ function toCourseBase(item) {
         slug: fd.slug || '',
         image: fd[IMAGE_FIELD_KEY]?.url || null,
         teacherIds: Array.isArray(fd[TEACHERS_FIELD_KEY]) ? fd[TEACHERS_FIELD_KEY] : [],
-        // capture category flags for grouping
         categories: SECTIONS.reduce((acc, s) => {
             acc[s.key] = !!fd[s.key];
             return acc;
@@ -149,7 +102,7 @@ async function listItems(collectionId, limit = 100, offset = 0) {
     const r = await wfFetch(`https://api.webflow.com/v2/collections/${collectionId}/items?limit=${limit}&offset=${offset}`);
     const text = await r.text();
     if (!r.ok) throw new Error(`List ${collectionId} ${r.status}: ${text.slice(0, 300)}`);
-    return JSON.parse(text); // { items: [...], pagination:{...} }
+    return JSON.parse(text);
 }
 
 async function getItem(collectionId, itemId) {
@@ -159,16 +112,13 @@ async function getItem(collectionId, itemId) {
     return JSON.parse(text);
 }
 
-// bounded concurrency
 async function fetchMany(ids, fn, concurrency = 8) {
     const results = {};
     let i = 0;
     async function worker() {
         while (i < ids.length) {
             const id = ids[i++];
-            try {
-                results[id] = await fn(id);
-            } catch (_) {}
+            try { results[id] = await fn(id); } catch (_) {}
         }
     }
     await Promise.all(new Array(Math.min(concurrency, ids.length)).fill(0).map(worker));
@@ -178,7 +128,7 @@ async function fetchMany(ids, fn, concurrency = 8) {
 // ---------- Handler ----------
 module.exports = async (req, res) => {
     const debug = 'debug' in (req.query || {});
-    const preview = 'preview' in (req.query || {}); // ?preview=1 shows full page w/ CSS
+    const preview = 'preview' in (req.query || {});
 
     // CORS preflight
     if (req.method === 'OPTIONS') {
@@ -203,22 +153,18 @@ module.exports = async (req, res) => {
         // 3) Map to base course
         const baseCourses = publishedItems.map(toCourseBase);
 
-        // 4) Resolve teacher names + portraits (optional if TEACHERS_COLLECTION_ID exists)
+        // 4) Resolve teachers if TEACHERS_COLLECTION_ID provided
         let teacherMap = {};
         if (TEACHERS_COLLECTION_ID) {
             const allTeacherIds = Array.from(new Set(baseCourses.flatMap(c => c.teacherIds)));
             teacherMap = await fetchMany(allTeacherIds, async (id) => {
                 const t = await getItem(TEACHERS_COLLECTION_ID, id);
                 const fd = t.fieldData || t;
-                return {
-                    id,
-                    name: fd.name || '',
-                    portrait: fd[TEACHER_PORTRAIT_KEY]?.url || null
-                };
+                return { id, name: fd.name || '', portrait: fd[TEACHER_PORTRAIT_KEY]?.url || null };
             });
         }
 
-        // 5) Attach teachers to each course
+        // 5) Attach teachers
         const courses = baseCourses.map(c => ({
             name: c.name,
             slug: c.slug,
@@ -227,7 +173,7 @@ module.exports = async (req, res) => {
             categories: c.categories
         }));
 
-        // 6) Group by the 3 sections (include course in every section whose flag is true)
+        // 6) Group into sections
         const grouped = SECTIONS.map(s => ({
             title: s.title,
             key: s.key,
@@ -244,7 +190,6 @@ module.exports = async (req, res) => {
             res.setHeader('Content-Type', 'text/html; charset=utf-8');
             return res.status(200).send(renderFullPage(sectionsHTML));
         } else {
-            // Teachable injection mode: return only the sections, no <html> wrapper
             res.setHeader('Content-Type', 'text/html; charset=utf-8');
             return res.status(200).send(sectionsHTML);
         }

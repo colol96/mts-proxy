@@ -10,19 +10,29 @@ const TEACHERS_COLLECTION_ID = process.env.TEACHERS_COLLECTION_ID;
 // Webflow field keys we use
 const IMAGE_FIELD_KEY = 'teaser-hero';  // <Image> field holding the thumbnail
 const TEACHERS_FIELD_KEY = 'teachers';  // <Multi-reference> field (IDs of teachers)
+const TEACHERS_PORTRAIT_KEY = 'teaser-profile';  // <Multi-reference> field (IDs of teachers)
 
 // Fetch helper with v2 auth
 const wfFetch = (url) => fetch(url, { headers: { Authorization: `Bearer ${TOKEN}` } });
 
 // ---------- Helpers ----------
 function courseHTML(c) {
-    const teacherNames = c.teachers?.map(t => t.name).join(', ') || '';
+    const teacherSpans = (c.teachers || []).map(t => {
+        if (!t) return '';
+        return `
+      <span class="teacher">
+        ${t.portrait ? `<img class="teacher-portrait" src="${t.portrait}" alt="${t.name}">` : ''}
+        ${t.name}
+      </span>
+    `;
+    }).join(', ');
+
     return `
     <a class="mts-card" href="https://www.masterthescore.com/courses/${c.slug}">
       ${c.image ? `<img src="${c.image}" alt="">` : ''}
       <div class="meta">
         <div class="title">${c.name}</div>
-        ${teacherNames ? `<div class="teachers">${teacherNames}</div>` : ''}
+        ${teacherSpans ? `<div class="teachers">${teacherSpans}</div>` : ''}
       </div>
     </a>
   `;
@@ -105,7 +115,11 @@ module.exports = async (req, res) => {
             teacherMap = await fetchMany(allTeacherIds, async (id) => {
                 const t = await getItem(TEACHERS_COLLECTION_ID, id);
                 const fd = t.fieldData || t;
-                return { id, name: fd.name || '' };
+                return {
+                    id,
+                    name: fd.name || '',
+                    portrait: fd[TEACHERS_PORTRAIT_KEY]?.url || null
+                };
             });
         }
 

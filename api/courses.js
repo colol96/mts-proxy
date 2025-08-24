@@ -85,7 +85,7 @@ function renderFullPage(html) {
 <title>Courses Preview</title>
 <style>
   body { font-family: system-ui, sans-serif; background: transparent; padding:2rem; }
-  .mts-section { max-width:1200px; margin:0 auto 2.5rem; }
+  .mts-section { max-width:944px; margin:0 auto 2.5rem; }
   .mts-section-title { font-size:1.25rem; font-weight:700; margin:0 0 0.75rem; }
   .mts-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(284px, 1fr)); gap:1.5rem; }
     .mts-card {

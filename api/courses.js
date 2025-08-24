@@ -60,21 +60,23 @@ function renderHTML(items) {
     }
     .mts-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(284px, 1fr));
       gap: 1.5rem;
       max-width: 1200px;
       margin: 0 auto;
     }
     .mts-card {
-      display: block;
-      background: #fff;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
+      display: flex;
+      background: transparent;
+      border: 1px solid #b69a5d;
+      border-radius: 8px;
       overflow: hidden;
       text-decoration: none;
       color: inherit;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      /*box-shadow: 0 2px 6px rgba(0,0,0,0.05);*/
       transition: transform 0.15s ease, box-shadow 0.15s ease;
+      flex-direction: column;
+      align-items: stretch;
     }
     .mts-card:hover {
       transform: translateY(-4px);
@@ -87,6 +89,9 @@ function renderHTML(items) {
       object-fit: cover;
     }
     .mts-card .meta {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
       padding: 0.75rem 1rem;
     }
     .mts-card .title {

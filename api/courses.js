@@ -85,13 +85,14 @@ function renderHTML(items) {
     .mts-card img {
       display: block;
       width: 100%;
-      aspect-ratio: 16/9;
+      aspect-ratio: 7/5;
       object-fit: cover;
     }
     .mts-card .meta {
       display: flex;
       flex-direction: column;
       justify-content: space-between;
+      height: 100%;
       padding: 0.75rem 1rem;
     }
     .mts-card .title {

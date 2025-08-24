@@ -78,7 +78,7 @@ function renderFullPage(html) {
 <meta charset="utf-8">
 <title>Courses Preview</title>
 <style>
-  body { font-family: system-ui, sans-serif; background:#f9fafb; padding:2rem; }
+  body { font-family: system-ui, sans-serif; background: transparent; padding:2rem; }
   .mts-section { max-width:1200px; margin:0 auto 2.5rem; }
   .mts-section-title { font-size:1.25rem; font-weight:700; margin:0 0 0.75rem; }
   .mts-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(284px, 1fr)); gap:1.5rem; }
@@ -109,7 +109,7 @@ function renderFullPage(html) {
       height: 100%;
       padding: 0.75rem 1rem;
     }
-  .mts-card .title { font-weight:600; font-size:1rem; margin-bottom:.25rem; line-height:1.3; }
+  .mts-card .title { font-weight:600; font-size:1rem; margin-bottom:1rem; line-height:1.3; }
   .mts-card .teachers { display:flex; flex-wrap:wrap; gap:.5rem 1rem; font-size:.85rem; color:#6b7280; }
   .mts-card .teacher { display:flex; align-items:center; gap:.35rem; }
   .mts-card .teacher-portrait { width:20px; height:20px; border-radius:50%; object-fit:cover; }

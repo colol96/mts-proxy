@@ -72,33 +72,18 @@ function renderSectionsHTML(grouped) {
     return grouped.map(g => sectionHTML(g.title, g.items)).join('');
 }
 
-/*
-function renderHTML(items) {
-    return `<section id="all-courses-content"><div class="mts-grid">${items.map(courseHTML).join('')}</div></section>`;
-}
-*/
-
-// Instead of just returning <section>...</section>
-function renderFullPage(items) {
-    const cards = items.map(courseHTML).join('');
-    return `<!DOCTYPE html>
+// Full-page preview (when ?preview=1)
+function renderFullPage(html) {
+    return `<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Courses Preview</title>
-  <style>
-    body {
-      font-family: system-ui, sans-serif;
-      padding: 2rem;
-      background: #f9fafb;
-    }
-    .mts-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(284px, 1fr));
-      gap: 1.5rem;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
+<meta charset="utf-8">
+<title>Courses Preview</title>
+<style>
+  body { font-family: system-ui, sans-serif; background:#f9fafb; padding:2rem; }
+  .mts-section { max-width:1200px; margin:0 auto 2.5rem; }
+  .mts-section-title { font-size:1.25rem; font-weight:700; margin:0 0 0.75rem; }
+  .mts-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(284px, 1fr)); gap:1.5rem; }
     .mts-card {
       display: flex;
       background: transparent;
@@ -112,11 +97,8 @@ function renderFullPage(items) {
       flex-direction: column;
       align-items: stretch;
     }
-    .mts-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 6px 12px rgba(0,0,0,0.1);
-    }
-    .mts-card img {
+  .mts-card:hover { transform:translateY(-4px); box-shadow:0 6px 12px rgba(0,0,0,0.1); }
+  .mts-card img {
       display: block;
       width: 100%;
       aspect-ratio: 7/5;
@@ -129,39 +111,14 @@ function renderFullPage(items) {
       height: 100%;
       padding: 0.75rem 1rem;
     }
-    .mts-card .title {
-      font-weight: 600;
-      font-size: 1rem;
-      margin-bottom: 0.25rem;
-      line-height: 1.3;
-    }
-    .mts-card .teachers {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem 1rem;
-      margin-top: 0.25rem;
-      font-size: 0.85rem;
-      color: #6b7280;
-    }
-    .mts-card .teacher {
-      display: flex;
-      align-items: center;
-      gap: 0.35rem;
-    }
-    .mts-card .teacher-portrait {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-  </style>
+  .mts-card .title { font-weight:600; font-size:1rem; margin-bottom:.25rem; line-height:1.3; }
+  .mts-card .teachers { display:flex; flex-wrap:wrap; gap:.5rem 1rem; font-size:.85rem; color:#6b7280; }
+  .mts-card .teacher { display:flex; align-items:center; gap:.35rem; }
+  .mts-card .teacher-portrait { width:20px; height:20px; border-radius:50%; object-fit:cover; }
+</style>
 </head>
 <body>
-  <section id="all-courses-content">
-    <div class="mts-grid">
-      ${cards}
-    </div>
-  </section>
+${html}
 </body>
 </html>`;
 }

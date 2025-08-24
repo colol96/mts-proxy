@@ -8,7 +8,7 @@ const COURSES_COLLECTION_ID = process.env.COLLECTION_ID;
 const TEACHERS_COLLECTION_ID = process.env.TEACHERS_COLLECTION_ID;
 
 // Webflow field keys we use
-const IMAGE_FIELD_KEY = 'teaser-hero';  // <Image> field holding the thumbnail
+const IMAGE_FIELD_KEY = 'mobile-hero';  // <Image> field holding the thumbnail
 const TEACHERS_FIELD_KEY = 'teachers';  // <Multi-reference> field (IDs of teachers)
 const TEACHERS_PORTRAIT_KEY = 'teaser-profile';  // <Multi-reference> field (IDs of teachers)
 

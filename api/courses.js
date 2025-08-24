@@ -197,8 +197,12 @@ module.exports = async (req, res) => {
 
         // 1) Load courses
         const data = await listItems(COURSES_COLLECTION_ID, 100, 0);
-        const baseCourses = (data.items || []).map(toCourseBase);
-
+        const baseCourses = (data.items || [])
+            .filter(it => {
+                const fd = it.fieldData || it;
+                return fd.publish === true;
+            })
+            .map(toCourseBase);
         // 2) Resolve teacher names (if TEACHERS_COLLECTION_ID is provided)
         let teacherMap = {};
         if (TEACHERS_COLLECTION_ID) {

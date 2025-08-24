@@ -38,9 +38,94 @@ function courseHTML(c) {
   `;
 }
 
+/*
 function renderHTML(items) {
     return `<section id="all-courses-content"><div class="mts-grid">${items.map(courseHTML).join('')}</div></section>`;
 }
+*/
+
+// Instead of just returning <section>...</section>
+function renderHTML(items) {
+    const cards = items.map(courseHTML).join('');
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Courses Preview</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      padding: 2rem;
+      background: #f9fafb;
+    }
+    .mts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1.5rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .mts-card {
+      display: block;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .mts-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+    }
+    .mts-card img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+    }
+    .mts-card .meta {
+      padding: 0.75rem 1rem;
+    }
+    .mts-card .title {
+      font-weight: 600;
+      font-size: 1rem;
+      margin-bottom: 0.25rem;
+      line-height: 1.3;
+    }
+    .mts-card .teachers {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      margin-top: 0.25rem;
+      font-size: 0.85rem;
+      color: #6b7280;
+    }
+    .mts-card .teacher {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .mts-card .teacher-portrait {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+  </style>
+</head>
+<body>
+  <section id="all-courses-content">
+    <div class="mts-grid">
+      ${cards}
+    </div>
+  </section>
+</body>
+</html>`;
+}
+
 
 function toCourseBase(item) {
     // v2 returns custom fields under item.fieldData

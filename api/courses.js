@@ -61,7 +61,7 @@ function renderSectionsHTML(grouped) {
     const sections = grouped.map(g => sectionHTML(g.title, g.items)).join('');
     return `
     <div class="mts-wrapper">
-      <section class="mts-section"><h2 class="mts-main-title">More courses to explore</h2></section>
+      <h2 class="mts-main-title">More courses to explore</h2>
       ${sections}
     </div>
   `;

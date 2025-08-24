@@ -8,34 +8,68 @@ const COURSES_COLLECTION_ID = process.env.COLLECTION_ID;
 const TEACHERS_COLLECTION_ID = process.env.TEACHERS_COLLECTION_ID;
 
 // Webflow field keys we use
+const PUBLISH_FIELD_KEY = 'publish';
 const IMAGE_FIELD_KEY = 'teaser-hero';  // <Image> field holding the thumbnail
 const TEACHERS_FIELD_KEY = 'teachers';  // <Multi-reference> field (IDs of teachers)
 const TEACHERS_PORTRAIT_KEY = 'teaser-profile';  // <Multi-reference> field (IDs of teachers)
 
+// Category sections (boolean fields on Course items)
+const SECTIONS = [
+    {
+        title: 'Music Composition & Orchestration Courses',
+        key: 'courses-composition-music',
+    },
+    {
+        title: 'Music Production Courses',
+        key: 'courses-music-production',
+    },
+    {
+        title: 'Trailer Music Courses',
+        key: 'courses-trailer-music',
+    },
+];
+
 // Fetch helper with v2 auth
 const wfFetch = (url) => fetch(url, { headers: { Authorization: `Bearer ${TOKEN}` } });
 
-// ---------- Helpers ----------
-function courseHTML(c) {
-    const teacherSpans = (c.teachers || []).map(t => {
-        if (!t) return '';
-        return `
-      <span class="teacher">
-        ${t.portrait ? `<img class="teacher-portrait" src="${t.portrait}" alt="${t.name}">` : ''}
-        ${t.name}
-      </span>
-    `;
-    });
+// ---------- Render helpers ----------
+function teacherSpan(t) {
+    if (!t) return '';
+    return `
+    <span class="teacher">
+      ${t.portrait ? `<img class="teacher-portrait" src="${t.portrait}" alt="${t.name}">` : ''}
+      ${t.name}
+    </span>
+  `;
+}
 
+function courseCardHTML(c) {
+    const teachersHTML = (c.teachers || []).map(teacherSpan);
     return `
     <a class="mts-card" href="https://www.masterthescore.com/courses/${c.slug}">
       ${c.image ? `<img src="${c.image}" alt="">` : ''}
       <div class="meta">
         <div class="title">${c.name}</div>
-        ${teacherSpans ? `<div class="teachers">${teacherSpans}</div>` : ''}
+        ${teachersHTML ? `<div class="teachers">${teachersHTML}</div>` : ''}
       </div>
     </a>
   `;
+}
+
+function sectionHTML(title, items) {
+    if (!items || !items.length) return '';
+    return `
+    <section class="mts-section">
+      <h2 class="mts-section-title">${title}</h2>
+      <div class="mts-grid">
+        ${items.map(courseCardHTML).join('')}
+      </div>
+    </section>
+  `;
+}
+
+function renderSectionsHTML(grouped) {
+    return grouped.map(g => sectionHTML(g.title, g.items)).join('');
 }
 
 /*
@@ -132,24 +166,29 @@ function renderHTML(items) {
 </html>`;
 }
 
-
+// ---------- Data mapping ----------
 function toCourseBase(item) {
-    // v2 returns custom fields under item.fieldData
     const fd = item.fieldData || item;
     return {
         id: item.id,
         name: fd.name || '',
         slug: fd.slug || '',
         image: fd[IMAGE_FIELD_KEY]?.url || null,
-        teacherIds: Array.isArray(fd[TEACHERS_FIELD_KEY]) ? fd[TEACHERS_FIELD_KEY] : []
+        teacherIds: Array.isArray(fd[TEACHERS_FIELD_KEY]) ? fd[TEACHERS_FIELD_KEY] : [],
+        // capture category flags for grouping
+        categories: SECTIONS.reduce((acc, s) => {
+            acc[s.key] = !!fd[s.key];
+            return acc;
+        }, {})
     };
 }
 
+// ---------- Webflow fetchers ----------
 async function listItems(collectionId, limit = 100, offset = 0) {
     const r = await wfFetch(`https://api.webflow.com/v2/collections/${collectionId}/items?limit=${limit}&offset=${offset}`);
     const text = await r.text();
     if (!r.ok) throw new Error(`List ${collectionId} ${r.status}: ${text.slice(0, 300)}`);
-    return JSON.parse(text); // { items: [...], pagination: {...} }
+    return JSON.parse(text); // { items: [...], pagination:{...} }
 }
 
 async function getItem(collectionId, itemId) {
@@ -159,7 +198,7 @@ async function getItem(collectionId, itemId) {
     return JSON.parse(text);
 }
 
-// Simple bounded concurrency for fetching teachers
+// bounded concurrency
 async function fetchMany(ids, fn, concurrency = 8) {
     const results = {};
     let i = 0;
@@ -167,11 +206,8 @@ async function fetchMany(ids, fn, concurrency = 8) {
         while (i < ids.length) {
             const id = ids[i++];
             try {
-                const x = await fn(id);
-                results[id] = x;
-            } catch (_) {
-                // ignore missing/archived
-            }
+                results[id] = await fn(id);
+            } catch (_) {}
         }
     }
     await Promise.all(new Array(Math.min(concurrency, ids.length)).fill(0).map(worker));
@@ -181,6 +217,7 @@ async function fetchMany(ids, fn, concurrency = 8) {
 // ---------- Handler ----------
 module.exports = async (req, res) => {
     const debug = 'debug' in (req.query || {});
+    const preview = 'preview' in (req.query || {}); // ?preview=1 shows full page w/ CSS
 
     // CORS preflight
     if (req.method === 'OPTIONS') {
@@ -191,19 +228,21 @@ module.exports = async (req, res) => {
     }
 
     try {
-        if (!TOKEN || !COURSES_COLLECTION_ID) {
-            throw new Error('Missing WEBFLOW_TOKEN or COLLECTION_ID');
-        }
+        if (!TOKEN || !COURSES_COLLECTION_ID) throw new Error('Missing WEBFLOW_TOKEN or COLLECTION_ID');
 
-        // 1) Load courses
+        // 1) Load all courses
         const data = await listItems(COURSES_COLLECTION_ID, 100, 0);
-        const baseCourses = (data.items || [])
-            .filter(it => {
-                const fd = it.fieldData || it;
-                return fd.publish === true;
-            })
-            .map(toCourseBase);
-        // 2) Resolve teacher names (if TEACHERS_COLLECTION_ID is provided)
+
+        // 2) Filter to published only
+        const publishedItems = (data.items || []).filter(it => {
+            const fd = it.fieldData || it;
+            return fd[PUBLISH_FIELD_KEY] === true;
+        });
+
+        // 3) Map to base course
+        const baseCourses = publishedItems.map(toCourseBase);
+
+        // 4) Resolve teacher names + portraits (optional if TEACHERS_COLLECTION_ID exists)
         let teacherMap = {};
         if (TEACHERS_COLLECTION_ID) {
             const allTeacherIds = Array.from(new Set(baseCourses.flatMap(c => c.teacherIds)));
@@ -213,26 +252,41 @@ module.exports = async (req, res) => {
                 return {
                     id,
                     name: fd.name || '',
-                    portrait: fd[TEACHERS_PORTRAIT_KEY]?.url || null
+                    portrait: fd[TEACHER_PORTRAIT_KEY]?.url || null
                 };
             });
         }
 
-        // 3) Attach teachers and render
+        // 5) Attach teachers to each course
         const courses = baseCourses.map(c => ({
             name: c.name,
             slug: c.slug,
             image: c.image,
-            teachers: (c.teacherIds || []).map(id => teacherMap[id]).filter(Boolean)
+            teachers: (c.teacherIds || []).map(id => teacherMap[id]).filter(Boolean),
+            categories: c.categories
         }));
 
-        const html = renderHTML(courses);
+        // 6) Group by the 3 sections (include course in every section whose flag is true)
+        const grouped = SECTIONS.map(s => ({
+            title: s.title,
+            key: s.key,
+            items: courses.filter(c => c.categories[s.key])
+        }));
+
+        // 7) Render
+        const sectionsHTML = renderSectionsHTML(grouped);
 
         res.setHeader('Access-Control-Allow-Origin', TEACHABLE_ORIGIN);
-        res.setHeader('Content-Type', 'text/html; charset=utf-8');
         res.setHeader('Cache-Control', 'public, max-age=300');
-        return res.status(200).send(html);
 
+        if (preview) {
+            res.setHeader('Content-Type', 'text/html; charset=utf-8');
+            return res.status(200).send(renderFullPage(sectionsHTML));
+        } else {
+            // Teachable injection mode: return only the sections, no <html> wrapper
+            res.setHeader('Content-Type', 'text/html; charset=utf-8');
+            return res.status(200).send(sectionsHTML);
+        }
     } catch (e) {
         if (debug) {
             res.setHeader('Access-Control-Allow-Origin', TEACHABLE_ORIGIN);

@@ -42,7 +42,7 @@ function teacherSpan(t) {
 }
 
 function courseCardHTML(c) {
-    const teachersHTML = (c.teachers || []).map(teacherSpan).join(', ');
+    const teachersHTML = (c.teachers || []).map(teacherSpan);
     return `
     <a class="mts-card" href="https://www.masterthescore.com/courses/${c.slug}">
       ${c.image ? `<img src="${c.image}" alt="">` : ''}

@@ -25,7 +25,7 @@ function courseHTML(c) {
         ${t.name}
       </span>
     `;
-    }).join(', ');
+    });
 
     return `
     <a class="mts-card" href="https://www.masterthescore.com/courses/${c.slug}">

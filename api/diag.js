@@ -4,9 +4,11 @@ module.exports = async (req, res) => {
     try {
         const token = process.env.WEBFLOW_TOKEN;
         const cid   = process.env.COLLECTION_ID;
+        const teacherID = process.env.TEACHERS_COLLECTION_ID;
 
         out.has_WEBFLOW_TOKEN = !!token;
         out.has_COLLECTION_ID = !!cid;
+        out.has_TEACGER_ID = !!teacherID;
 
         if (!token) return res.status(200).json(out);
 

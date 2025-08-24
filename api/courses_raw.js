@@ -3,8 +3,9 @@ module.exports = async (req, res) => {
     try {
         const token = process.env.WEBFLOW_TOKEN;
         const cid = process.env.COLLECTION_ID;
-        if (!token || !cid) {
-            return res.status(500).json({ error: 'Missing WEBFLOW_TOKEN or COLLECTION_ID' });
+        const teacherId = process.env.COLLECTION_ID;
+        if (!token || !cid || !teacherId ) {
+            return res.status(500).json({ error: 'Missing WEBFLOW_TOKEN or COLLECTION_ID or TEACHER_ID' });
         }
         const url = `https://api.webflow.com/v2/collections/${cid}/items?limit=5`;
         const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });

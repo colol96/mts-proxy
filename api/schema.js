@@ -11,11 +11,12 @@ module.exports = async (req, res) => {
         const t = await r.text();
         const data = JSON.parse(t);
 
-        // Return a concise list of fields: key, type, and target collection (if any)
+        // Return first field raw so we can see its actual structure
+        const firstField = (data.fields || [])[0];
         const fields = (data.fields || []).map(f => ({
-            key: f.key, type: f.type, target: f.metadata?.collectionId || null
+            key: f.key || f.slug || f.id, type: f.type, displayName: f.displayName || f.name, target: f.metadata?.collectionId || null
         }));
-        res.status(200).json({ id: cid, name: data.displayName || data.name, fields });
+        res.status(200).json({ id: cid, name: data.displayName || data.name, firstFieldRaw: firstField, fields });
     } catch (e) {
         res.status(500).json({ error: String(e) });
     }

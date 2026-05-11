@@ -186,7 +186,7 @@ module.exports = async (req, res) => {
         const sectionsHTML = renderSectionsHTML(grouped);
 
         res.setHeader('Access-Control-Allow-Origin', TEACHABLE_ORIGIN);
-        res.setHeader('Cache-Control', 'public, max-age=300');
+        res.setHeader('Cache-Control', 'public, max-age=60');
 
         if (preview) {
             res.setHeader('Content-Type', 'text/html; charset=utf-8');

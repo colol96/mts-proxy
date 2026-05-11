@@ -8,7 +8,7 @@ const TEACHERS_COLLECTION_ID = process.env.TEACHERS_COLLECTION_ID;
 
 // Field keys in your Webflow collections
 const PUBLISH_FIELD_KEY = 'publish';
-const IMAGE_FIELD_KEY   = 'teaser-hero';      // course thumbnail
+const IMAGE_FIELD_KEY   = 'mobile-hero';      // course thumbnail
 const TEACHERS_FIELD_KEY = 'teachers';        // multi-ref (IDs) to Teachers
 const TEACHER_PORTRAIT_KEY = 'teaser-profile';// teacher portrait image
 

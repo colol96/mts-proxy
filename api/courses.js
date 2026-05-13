@@ -7,10 +7,11 @@ const COURSES_COLLECTION_ID = process.env.COLLECTION_ID;
 const TEACHERS_COLLECTION_ID = process.env.TEACHERS_COLLECTION_ID;
 
 // Field keys in your Webflow collections
-const PUBLISH_FIELD_KEY = 'publish';
-const IMAGE_FIELD_KEY   = 'teaser-hero';      // course thumbnail
-const TEACHERS_FIELD_KEY = 'teachers';        // multi-ref (IDs) to Teachers
-const TEACHER_PORTRAIT_KEY = 'teaser-profile';// teacher portrait image
+const PUBLISH_FIELD_KEY      = 'publish';
+const IMAGE_FIELD_KEY        = 'mobile-hero';         // course thumbnail
+const TEACHERS_FIELD_KEY     = 'teachers';             // multi-ref (IDs) to Teachers
+const TEACHER_PORTRAIT_KEY   = 'teaser-profile';       // teacher portrait image
+const ALT_TITLE_FIELD_KEY    = 'alternative-hero-title';
 
 // Category sections (boolean fields on Course items)
 const SECTIONS = [
@@ -88,7 +89,7 @@ function toCourseBase(item) {
     const fd = item.fieldData || item;
     return {
         id: item.id,
-        name: fd.name || '',
+        name: fd[ALT_TITLE_FIELD_KEY] || fd.name || '',
         slug: fd.slug || '',
         image: fd[IMAGE_FIELD_KEY]?.url || null,
         teacherIds: Array.isArray(fd[TEACHERS_FIELD_KEY]) ? fd[TEACHERS_FIELD_KEY] : [],
@@ -186,7 +187,7 @@ module.exports = async (req, res) => {
         const sectionsHTML = renderSectionsHTML(grouped);
 
         res.setHeader('Access-Control-Allow-Origin', TEACHABLE_ORIGIN);
-        res.setHeader('Cache-Control', 'public, max-age=60');
+        res.setHeader('Cache-Control', 'public, max-age=300');
 
         if (preview) {
             res.setHeader('Content-Type', 'text/html; charset=utf-8');
